@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StudentEnrollment.Data;
 
@@ -33,28 +34,41 @@ app.UseHttpsRedirection();
 
 app.UseCors("AllowAllOrigins");
 
-var summaries = new[]
+app.MapGet("/api/courses", async (StudentEnrollmentDbContext context) =>
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+    return await context.Courses.ToListAsync();
+});
 
-app.MapGet("/weatherforecast", () =>
+app.MapGet("/api/courses/{id}", async (StudentEnrollmentDbContext context, int id) =>
 {
-    var forecast = Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+    return await context.Courses.FindAsync(id) is Course course ? Results.Ok(course) : Results.NotFound();
+});
+
+app.MapPost("/api/courses", async (StudentEnrollmentDbContext context, Course course) =>
+{
+    context.Courses.Add(course);
+    await context.SaveChangesAsync();
+    return Results.Created($"/api/courses/{course.Id}", course);
+});
+
+app.MapPut("/api/courses/{id}", async (StudentEnrollmentDbContext context, int id, Course course) =>
+{
+    var recordExists = await context.Courses.AnyAsync(c => c.Id == id);
+    if (!recordExists) return Results.NotFound();
+
+    context.Update(course);
+    await context.SaveChangesAsync();
+    return Results.NoContent();
+});
+
+app.MapDelete("/api/courses/{id}", async (StudentEnrollmentDbContext context, int id) =>
+{
+    var record = await context.Courses.FindAsync(id);
+    if (record is null) return Results.NotFound();
+
+    context.Courses.Remove(record);
+    await context.SaveChangesAsync();
+    return Results.NoContent();
+});
 
 app.Run();
-
-internal record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
