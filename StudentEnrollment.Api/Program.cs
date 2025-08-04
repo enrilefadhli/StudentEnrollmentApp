@@ -2,6 +2,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StudentEnrollment.Data;
 using StudentEnrollment.Api.Endpoints;
+using StudentEnrollment.Api.Configurations;
+using Microsoft.Extensions.DependencyInjection;
+using AutoMapper;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +17,9 @@ builder.Services.AddDbContext<StudentEnrollmentDbContext>(options =>
 // Add services to the container.
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+//builder.Services.AddAutoMapper(typeof(MapperConfig));
+builder.Services.AddAutoMapper(cfg => cfg.AddProfile<MapperConfig>());
 
 builder.Services.AddCors(options =>
 {
